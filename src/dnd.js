@@ -24,6 +24,7 @@ export function dnd(svg, options) {
 
 	function onPointerMove(evt) {
 		if(draggig) {
+			evt.preventDefault()
 			const pos = eventXY(evt)
 			const currentTime = performance.now()
 			dragMove(eventXY(evt), prevPos, startPos, currentTime, prevTime, startTime, evt)
@@ -34,6 +35,7 @@ export function dnd(svg, options) {
 	
 	function onPointerUp(evt) {
 		if(draggig) {
+			evt.preventDefault()
 			draggig = false
 			const currentTime = performance.now()
 			dragStop(eventXY(evt), prevPos, startPos, currentTime, prevTime, startTime,  evt)
@@ -58,6 +60,8 @@ export function dnd(svg, options) {
 				prevPos = null
 				prevTime = null
 				startTime = null
+			} else {
+				evt.preventDefault()
 			}
 		}
 	}
