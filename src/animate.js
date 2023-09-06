@@ -1,6 +1,8 @@
+const noop = (() => {});
+
 export function animate(node, options) {
-	const targetFrameLength = options.frameLength || 16
-	const step = options.step || (() => {})
+	let targetFrameLength = options.frameLength || 16
+	let step = options.step || noop
 	
 	let scheduleFrame = null
 	let prevTime = performance.now()
@@ -26,6 +28,11 @@ export function animate(node, options) {
 				cancelAnimationFrame(scheduleFrame)
 				scheduleFrame = null
 			}
+		},
+		update:  (ops) => {
+			console.log(ops.frameLength)
+			targetFrameLength = ops.frameLength || 16
+			step = ops.step || noop
 		}
 	}
 }

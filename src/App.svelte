@@ -1,6 +1,8 @@
 <script>
 	import {animate} from './animate.js'
 	import {dnd} from './dnd.js'
+
+	let menuOpen = true
 	
 	let position = {x:0,y:0}
 	let target = {x:0,y:0}
@@ -14,6 +16,8 @@
 	let showTarget = false;
 	let fullScreenDrag = true;
 
+	$: document.body.classList.toggle('block-scroll', !menuOpen);
+
 	const physicsConfigDefault = {
 		maxTrackingTime: 160,
 		minVelocity: 1,
@@ -25,7 +29,7 @@
 	}
 
 
-	const physicsConfig = {
+	let physicsConfig = {
 		maxTrackingTime: 160,
 		minVelocity: 1,
 		friction: 0.05,
@@ -44,6 +48,7 @@
 		acceleration: {min: 0, max: 1, step: 0.01},
 		deceleration: {min: 0, max: 1, step: 0.01},
 		stiffness: {min: 0, max: 1, step: 0.01},
+		frameLength: {min: 1, max: 60, step: 1},
 	}
 
 	let bounds = {
@@ -70,8 +75,9 @@
 	}
 	
 	function resetParams() {
-		for(let k in Object.keys(physicsConfig)) {
-			physicsConfig[k] = physicsConfigDefault[k]
+		physicsConfig = {
+			...physicsConfig,
+			...physicsConfigDefault,
 		}
 	}
 
@@ -298,13 +304,18 @@ function step(dt) {
 	}
 
 	.overlay {
-		background: #3333;
 		z-index: 1000;
 		position: absolute;
+		max-width: 30em;
+		pointer-events: none;
+	}
+
+	.overlay-inner {
+		background: #3333;
 		border: 2px solid #4444;
 		margin: 1em;
 		padding: 1em 2em;
-		max-width: 30em;
+		pointer-events: all;
 	}
 
 	dl {
@@ -347,6 +358,7 @@ function step(dt) {
 	}
 	h2 {
 		margin: 0;
+		display: inline;
 	}
 
 	.dragging {
@@ -364,10 +376,16 @@ function step(dt) {
 	summary {
 		cursor: pointer;
 	}
+
+	:global(.block-scroll) {
+		touch-action: none;
+		overflow: hidden;
+	}
 </style>
 
 <div class="overlay">
-	<h2>Cocoa Scroll Physics</h2>
+	<details class="overlay-inner" bind:open={menuOpen}>
+	<summary><h2>Cocoa Scroll Physics</h2></summary>
 	<p>
 		This is an implementation of scroll physics inspired by iOS.<br>
 		You can drag the red ball around inside the dark square. <br>
@@ -402,9 +420,10 @@ function step(dt) {
 	<center>
 		<a href="https://tools.laszlokorte.de/" title="More Educational Tools">more educational tools</a>
 	</center>
+	</details>
 </div>
 
-<svg class:draggable={fullScreenDrag} use:animate={{step, frameLength: physicsConfig.frameLength}} use:dnd={{dragStart,dragStop,dragMove}} viewBox="{bounds.minX - bounds.margin} {bounds.minY - bounds.margin} {bounds.maxX - bounds.minX + bounds.margin * 2} {bounds.maxY - bounds.minX + bounds.margin * 2}" width="1000" height="1000" preserveAspectRatio="xMaxYMid meet">
+<svg class:draggable={fullScreenDrag} use:animate={{step, frameLength: physicsConfig.frameLength}} use:dnd={{dragStart,dragStop,dragMove}} viewBox="{bounds.minX - bounds.margin} {bounds.minY - bounds.margin} {bounds.maxX - bounds.minX + bounds.margin * 2} {bounds.maxY - bounds.minX + bounds.margin * 2}" width="1000" height="1000" preserveAspectRatio="xMidYMid meet">
 	<rect class:draggable={fullScreenDrag} x={bounds.minX} y={bounds.minY} width={bounds.maxX - bounds.minX} height={bounds.maxY - bounds.minY} fill="#444" stroke-width="8" stroke-dasharray="30 30" stroke="#567"></rect>
 	<circle class:dragging class="draggable" cx={Math.round(position.x)} cy={Math.round(position.y)} r={100} fill="#f45"></circle>
 	<circle class:hide={!showTarget} cx={Math.round(target.x)} cy={Math.round(target.y)} r={20} fill="white" stroke="#45f" stroke-width="10"></circle>
