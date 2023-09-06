@@ -1,3 +1,9 @@
+
+
+![Screenshot of the app](preview.png)
+
+[Live Demo](https://static.laszlokorte.de/smooth-drag/)
+
 # Cocoa Scroll Physics
 
 This is an implementation of scroll physics inspired by iOS.
