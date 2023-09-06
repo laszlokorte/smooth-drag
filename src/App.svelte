@@ -191,6 +191,14 @@ let dragging = false
 let baseTime = null
 let basePos = {x:0,y:0}
 
+// the bounds the movement is constrained to
+let bounds = {
+	minX: -400,
+	maxX: 400,
+	minY: -400,
+	maxY: 400,
+	margin: 400,
+}
 
 // linear soft clamp
 function softClamp(v, min, max, stiffness = 0.9) {
