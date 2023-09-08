@@ -389,6 +389,10 @@ function step(dt) {
 		touch-action: none;
 		overflow: hidden;
 	}
+
+	.nointeraction {
+		pointer-events: none;
+	}
 </style>
 
 <div class="overlay">
@@ -432,7 +436,7 @@ function step(dt) {
 </div>
 
 <svg class:draggable={fullScreenDrag} use:animate={{step, frameLength: physicsConfig.frameLength}} use:dnd={{dragStart,dragStop,dragMove}} viewBox="{bounds.minX - bounds.margin} {bounds.minY - bounds.margin} {bounds.maxX - bounds.minX + bounds.margin * 2} {bounds.maxY - bounds.minX + bounds.margin * 2}" width="1000" height="1000" preserveAspectRatio="xMidYMid meet">
-	<rect class:draggable={fullScreenDrag} x={bounds.minX} y={bounds.minY} width={bounds.maxX - bounds.minX} height={bounds.maxY - bounds.minY} fill="#444" stroke-width="8" stroke-dasharray="30 30" stroke="#567"></rect>
+	<rect class="nointeraction" x={bounds.minX} y={bounds.minY} width={bounds.maxX - bounds.minX} height={bounds.maxY - bounds.minY} fill="#444" stroke-width="8" stroke-dasharray="30 30" stroke="#567"></rect>
 	<circle class:dragging class="draggable" cx={Math.round(position.x)} cy={Math.round(position.y)} r={100} fill="#f45"></circle>
-	<circle class:hide={!showTarget} cx={Math.round(target.x)} cy={Math.round(target.y)} r={20} fill="white" stroke="#45f" stroke-width="10"></circle>
+	<circle class="nointeraction" class:hide={!showTarget} cx={Math.round(target.x)} cy={Math.round(target.y)} r={20} fill="white" stroke="#45f" stroke-width="10"></circle>
 </svg>
