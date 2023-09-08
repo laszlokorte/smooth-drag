@@ -16,6 +16,8 @@
 	let showTarget = false;
 	let fullScreenDrag = true;
 
+	let circle = false
+
 	$: document.body.classList.toggle('block-scroll', !menuOpen);
 
 	const physicsConfigDefault = {
@@ -57,6 +59,12 @@
 		minY: -400,
 		maxY: 400,
 		margin: 400,
+	}
+
+	$: if(circle) {
+		bounds.radius = 400
+	} else {
+		bounds.radius = null	
 	}
 
 	function softClamp(v, min, max, stiffness = 0.9) {
@@ -114,8 +122,17 @@
 		target.x += pos.x - prevPos.x
 		target.y += pos.y - prevPos.y
 		
-		position.x = softClamp(target.x, bounds.minX, bounds.maxX, physicsConfig.stiffness)
-		position.y = softClamp(target.y, bounds.minY, bounds.maxY, physicsConfig.stiffness)
+		if(bounds.radius) {
+			const radius = Math.sqrt(target.x*target.x+ target.y*target.y)
+			const angle = Math.atan2(target.y, target.x)
+
+			position.x = Math.cos(angle) * softClamp(radius, 0, bounds.radius, physicsConfig.stiffness)
+			position.y = Math.sin(angle) * softClamp(radius, 0, bounds.radius, physicsConfig.stiffness)
+		} else {
+			position.x = softClamp(target.x, bounds.minX, bounds.maxX, physicsConfig.stiffness)
+			position.y = softClamp(target.y, bounds.minY, bounds.maxY, physicsConfig.stiffness)
+		}
+
 
 		if(currentTime - baseTime > physicsConfig.maxTrackingTime) {
 			baseTime = currentTime
@@ -134,8 +151,14 @@
 			const deflectionX = Math.min(0, target.x - bounds.minX) + Math.max(0, target.x - bounds.maxX)
 			const deflectionY = Math.min(0, target.y - bounds.minY) + Math.max(0, target.y - bounds.maxY)
 
+			const radius = Math.sqrt(target.x*target.x+target.y*target.y)
+			const angle = Math.atan2(target.y,target.x)
+			const velocityR = Math.sqrt(velocity.x*velocity.x+velocity.y*velocity.y)
+			const deflectionR = Math.max(0, (bounds.radius ? radius - bounds.radius : 0))
+
 			const deflectionAndVelocityAlignedX = (deflectionX*velocity.x) > 0
 			const deflectionAndVelocityAlignedY = (deflectionY*velocity.y) > 0
+			const deflectionAndVelocityAlignedR = deflectionR && (velocity.x * target.x + velocity.y * target.y) > 0
 
 			
 			velocity.x *= Math.exp(frictionLog*dt/physicsConfig.normalizer)
@@ -147,24 +170,40 @@
 			if(Math.abs(velocity.y) < physicsConfig.stopVelocity) {
 				velocity.y = 0
 			}
-		
 
-			if(deflectionAndVelocityAlignedX) {
-				velocity.x += -deflectionX*deceleration
-			} else if(deflectionX) {
-				velocity.x = -deflectionX*acceleration
-			}
+			if(deflectionAndVelocityAlignedR) {
+				velocity.x += -deflectionR*deceleration*Math.cos(angle)
+				velocity.y += -deflectionR*deceleration*Math.sin(angle)
+			} else if(deflectionR) {
+				velocity.x = -deflectionR*acceleration*Math.cos(angle)
+				velocity.y = -deflectionR*acceleration*Math.sin(angle)
+			} else {
+				if(deflectionAndVelocityAlignedX) {
+					velocity.x += -deflectionX*deceleration
+				} else if(deflectionX) {
+					velocity.x = -deflectionX*acceleration
+				}
 
-			if(deflectionAndVelocityAlignedY) {
-				velocity.y += -deflectionY*deceleration
-			} else if(deflectionY) {
-				velocity.y = -deflectionY*acceleration
+				if(deflectionAndVelocityAlignedY) {
+					velocity.y += -deflectionY*deceleration
+				} else if(deflectionY) {
+					velocity.y = -deflectionY*acceleration
+				}
 			}
 
 			target.x += velocity.x * dt
 			target.y += velocity.y * dt
-			position.x = softClamp(target.x, bounds.minX, bounds.maxX, physicsConfig.stiffness)
-			position.y = softClamp(target.y, bounds.minY, bounds.maxY, physicsConfig.stiffness)
+			
+			if(bounds.radius) {
+				const radius = Math.sqrt(target.x*target.x+ target.y*target.y)
+				const angle = Math.atan2(target.y, target.x)
+
+				position.x = Math.cos(angle) * softClamp(radius, 0, bounds.radius, physicsConfig.stiffness)
+				position.y = Math.sin(angle) * softClamp(radius, 0, bounds.radius, physicsConfig.stiffness)
+			} else {
+				position.x = softClamp(target.x, bounds.minX, bounds.maxX, physicsConfig.stiffness)
+				position.y = softClamp(target.y, bounds.minY, bounds.maxY, physicsConfig.stiffness)
+			}
 		}
 	}
 
@@ -406,6 +445,11 @@ function step(dt) {
 	</p>
 	<form on:submit|preventDefault>
 		<dl>
+	<dt>Bounds</dt>
+	<dd>
+		<label><input bind:group={circle} value={false} type="radio" /> Rectangle</label>
+		<label><input bind:group={circle} value={true} type="radio" /> Circular</label>
+	</dd>
 	{#each Object.keys(physicsConfigRange) as confKey}
 	<dt><label for="conf-{confKey}">{confKey}</label></dt>
 	<dd><input id="conf-{confKey}" type="range" min="{physicsConfigRange[confKey].min}" max="{physicsConfigRange[confKey].max}" step="{physicsConfigRange[confKey].step}" bind:value={physicsConfig[confKey]}/></dd>
@@ -415,8 +459,8 @@ function step(dt) {
 	<dd><label for="target"> <input bind:checked={showTarget} type="checkbox" id="target" /> Show</label></dd>
 <dt>Drag</dt>
 	<dd>
-		<label><input bind:group={fullScreenDrag} value={false} type="radio" id="fullscreen-drag" /> Circle</label>
-		<label><input bind:group={fullScreenDrag} value={true} type="radio" id="fullscreen-drag" /> Everywhere</label>
+		<label><input bind:group={fullScreenDrag} value={false} type="radio" /> Circle</label>
+		<label><input bind:group={fullScreenDrag} value={true} type="radio" /> Everywhere</label>
 	</dd>
 	<dt></dt>
 	<dd>
@@ -436,7 +480,11 @@ function step(dt) {
 </div>
 
 <svg class:draggable={fullScreenDrag} use:animate={{step, frameLength: physicsConfig.frameLength}} use:dnd={{dragStart,dragStop,dragMove}} viewBox="{bounds.minX - bounds.margin} {bounds.minY - bounds.margin} {bounds.maxX - bounds.minX + bounds.margin * 2} {bounds.maxY - bounds.minX + bounds.margin * 2}" width="1000" height="1000" preserveAspectRatio="xMidYMid meet">
+	{#if bounds.radius}
+	<circle class="nointeraction" cx={0} cy={0} r={bounds.radius} fill="#444" stroke-width="8" stroke-dasharray="30 30" stroke="#567"></circle>
+	{:else}
 	<rect class="nointeraction" x={bounds.minX} y={bounds.minY} width={bounds.maxX - bounds.minX} height={bounds.maxY - bounds.minY} fill="#444" stroke-width="8" stroke-dasharray="30 30" stroke="#567"></rect>
+	{/if}
 	<circle class:dragging class="draggable" cx={Math.round(position.x)} cy={Math.round(position.y)} r={100} fill="#f45"></circle>
 	<circle class="nointeraction" class:hide={!showTarget} cx={Math.round(target.x)} cy={Math.round(target.y)} r={20} fill="white" stroke="#45f" stroke-width="10"></circle>
 </svg>
